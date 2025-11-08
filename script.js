@@ -1,6 +1,6 @@
 console.log('hello');
 let xp = 1000000;
-let money = 0;
+let money = 100;
 let unlockCount = 0;
 let pieces = [];
 let ucm = 1; //stands for universal cash multiplier
@@ -10,13 +10,100 @@ function addXP(amount){
 	xp += amount;
 }
 
-function addMoney(amount){
-	money += (amount*ucm);
+function addMoney(amount, multiplier){
+	newAmount = amount*multiplier;
+	console.log(ucm);
+	console.log(newAmount);
+	money += newAmount;
 }
 
 function checkPieces(){
 	for (let p of pieces){
 		if (p.locked && unlockCount >= p.requirements) p.unlock();
+	}
+}
+
+class PowerupMoney{
+	constructor(name, label, costDisplay, cost, buyBtn, duration, multiplier){
+		this.name = name;
+		this.label = document.getElementById(label);
+		this.costDisplay = document.getElementById(costDisplay);
+		this.cost = cost;
+		this.buyBtn = document.getElementById(buyBtn);
+		this.duration = duration;
+		this.multiplier = multiplier;
+		this.active = false;
+		this.buyBtn.addEventListener('click', () => {if (money >= this.cost) this.buy()});
+		console.log('itteeeemmm constructed')
+	}
+	
+	buy(){
+		console.log('buying')
+		money -= this.cost;
+		document.getElementById('money').textContent = 'Money: ' + money;
+		this.activate();
+	}
+	
+	activate(){
+		if (this.active) return;
+		this.active = true;
+		console.log('activating')
+		ucm *= this.multiplier;
+		let timeLeft = this.duration;
+		this.buyBtn.textContent = timeLeft + 's';
+		let timer = setInterval(() => {
+			timeLeft --;
+			this.buyBtn.textContent = timeLeft + 's';
+			if (timeLeft <= 0) {
+					console.log(ucm)
+					clearInterval(timer);
+					ucm /= this.multiplier;
+					this.buyBtn.textContent = 'Buy'
+					this.active = false;
+			}
+		}, 1000);
+	}
+}
+
+class PowerupTime{
+	constructor(name, label, costDisplay, cost, buyBtn, duration, multiplier){
+		this.name = name;
+		this.label = document.getElementById(label);
+		this.costDisplay = document.getElementById(costDisplay);
+		this.cost = cost;
+		this.buyBtn = document.getElementById(buyBtn);
+		this.duration = duration;
+		this.multiplier = multiplier;
+		this.active = false;
+		this.buyBtn.addEventListener('click', () => {if (money >= this.cost) this.buy()});
+		console.log('itteeeemmm constructed')
+	}
+	
+	buy(){
+		console.log('buying')
+		money -= this.cost;
+		document.getElementById('money').textContent = 'Money: ' + money;
+		this.activate();
+	}
+	
+	activate(){
+		if (this.active) return;
+		this.active = true;
+		console.log('activating')
+		uspm *= this.multiplier;
+		let timeLeft = this.duration;
+		this.buyBtn.textContent = timeLeft + 's';
+		let timer = setInterval(() => {
+			timeLeft --;
+			this.buyBtn.textContent = timeLeft + 's';
+			if (timeLeft <= 0) {
+					console.log(uspm)
+					clearInterval(timer);
+					uspm /= this.multiplier;
+					this.buyBtn.textContent = 'Buy'
+					this.active = false;
+			}
+		}, 1000);
 	}
 }
 
@@ -60,7 +147,8 @@ class Repertoire{
 			}
 		}, 1000 * uspm);
 		console.log('-----HERRREEEEE-----')
-		addMoney(this.multiplier*this.level);
+		addMoney((this.multiplier*this.level), ucm);
+		console.log(this.multiplier*this.level);
 		document.getElementById('money').textContent = 'Money: ' + money;
 	}
 	
@@ -82,7 +170,7 @@ class Ability{
 		this.button = document.getElementById(button);
 		this.hidden = true;
 		this.name.style.display = 'none';
-  		this.speed = multiplier*1000*uspm;
+  		this.speed = multiplier*1000;
   		this.multiplier = multiplier;
   		this.interval = setInterval(() => this.tick(), this.speed);
   		this.level = 1;
@@ -105,69 +193,66 @@ class Ability{
 		this.start();
   }
 
-  start() {
-	if (this.interval) clearInterval(this.interval);
-	const step = (this.tickRate / this.speed) * 100;
-
-	this.interval = setInterval(() => {
-	  this.progress += step;
-
-	  if (this.progress >= 100) {
-		this.progress = 0;
-		this.tick();
-	  }
-
-	  this.bar.style.width = this.progress + "%";
-	}, this.tickRate);
-  }
+	start() {
+		if (this.interval) clearInterval(this.interval);
+		const step = (this.tickRate / this.speed) * 100;
+		this.interval = setInterval(() => {
+	  	this.progress += step;
+	  	if (this.progress >= 100) {
+			this.progress = 0;
+			this.tick();
+	  		}
+	  	this.bar.style.width = this.progress + "%";
+		}, this.tickRate);
+  	}
 	
- tick() {
-  if (this.hidden) return;
-  addXP(this.points);
-  document.getElementById('xp').textContent = 'XP: ' + xp;
- }
+ 	tick() {
+  		if (this.hidden) return;
+  		addXP(this.points);
+  		document.getElementById('xp').textContent = 'XP: ' + xp;
+ 	}
  
- evolve() {
-  this.stage ++;
-  this.update();
-  if (this.stage >=1 && this.next.hidden){
-	  this.next.hidden = false;
-	  this.next.name.style.display = 'table-row';
-	  unlockCount++;
-	  checkPieces();
-  }
- }
+ 	evolve() {
+  		this.stage ++;
+  		this.update();
+  		if (this.stage >=1 && this.next.hidden){
+	  		this.next.hidden = false;
+	  		this.next.name.style.display = 'table-row';
+	  		unlockCount++;
+	  		checkPieces();
+  		}
+ 	}
  
- upgrade() {
-  if (this.level < this.maxLvl){
-  clearInterval(this.interval);
-  this.speed *= 0.9;
-  this.interval = setInterval(() => this.tick(), this.speed);
-  this.level++;
-  this.lvl.textContent = "Lvl. " + this.level;
-  this.points = 1 * this.multiplier * (this.stage + 1) * this.level;
-  this.cost = (this.level**2)*((this.stage+1)**2)*this.multiplier*3**2;
-  this.button.textContent = '(' + this.cost + ')';
-  this.start();
-  }
-  else {
-   this.evolve();
-  }
- }
+ 	upgrade() {
+  		if (this.level < this.maxLvl){
+  			clearInterval(this.interval);
+  			this.speed *= 0.9;
+  			this.interval = setInterval(() => this.tick(), this.speed);
+  			this.level++;
+  			this.lvl.textContent = "Lvl. " + this.level;
+  			this.points = 1 * this.multiplier * (this.stage + 1) * this.level;
+  			this.cost = (this.level**2)*((this.stage+1)**2)*this.multiplier*3**2;
+  			this.button.textContent = '(' + this.cost + ')';
+  			this.start();
+  		}
+  		else {
+   			this.evolve();
+  		}
+ 	}
  
- update() {
-  this.label.textContent = this.stages[this.stage] + ' ' + this.workingLabel;
-  this.level = 1;
-  this.lvl.textContent = "Lvl. " + this.level;
-  clearInterval(this.interval);
-  this.speed *= 1.5;
-  this.interval = setInterval(() => this.tick(), this.speed);
-  this.maxLvl = 15*(this.stage + 1);
-  this.points = 1 * this.multiplier * (this.stage + 1) * this.level;
-  this.cost = (this.level**2)*((this.stage+1)**2)*this.multiplier*3**2;
-  this.button.textContent = '(' + this.cost + ')';
-  this.start();
- }
+ 	update() {
+  		this.label.textContent = this.stages[this.stage] + ' ' + this.workingLabel;
+  		this.level = 1;
+  		this.lvl.textContent = "Lvl. " + this.level;
+  		clearInterval(this.interval);
+  		this.speed *= 1.5;
+  		this.interval = setInterval(() => this.tick(), this.speed);
+  		this.maxLvl = 15*(this.stage + 1);
+  		this.points = 1 * this.multiplier * (this.stage + 1) * this.level;
+  		this.cost = (this.level**2)*((this.stage+1)**2)*this.multiplier*3**2;
+  		this.button.textContent = '(' + this.cost + ')';
+  		this.start();
+ 	}
 }
 
 let test = new Ability('test', 'aLvl', 'aLabel', 'aBtn', 1, "aFill");
@@ -211,11 +296,18 @@ br = new Repertoire('rep2', 'br1', 'br2', 'brPBtn', 'brUBtn', 2, 34, 2, 200);
 cr = new Repertoire('rep3', 'cr1', 'cr2', 'crPBtn', 'crUBtn', 3, 55, 3, 300);
 dr = new Repertoire('rep4', 'dr1', 'dr2', 'drPBtn', 'drUBtn', 5, 89, 3, 400);
 er = new Repertoire('rep5', 'er1', 'er2', 'erPBtn', 'erUBtn', 15, 144, 5, 800); //dragonetti
+fr = new Repertoire('rep6', 'fr1', 'fr2', 'frPBtn', 'frUBtn', 31, 365, 6, 1200); //vanhal
+er = new Repertoire('rep7', 'gr1', 'gr2', 'grPBtn', 'grUBtn', 40, 420, 6, 1600); //bottesini
+
 pieces.push(ar);
 pieces.push(br);
 pieces.push(cr);
 pieces.push(dr);
 pieces.push(er);
+
+ia = new PowerupMoney('ia', 'itemA', 'itemACost', 20, 'itemABuy', 20, 5); //rosin
+ib = new PowerupTime('ib', 'itemB', 'itemBCost', 20, 'itemBBuy', 20, 0.5); //metronome
+
 function showMenu(id) {
 	document.getElementById('basic').style.display = 'none';
 	document.getElementById('repertoire').style.display = 'none';
