@@ -1,7 +1,7 @@
 body {
 	
 }
-td {
+td :not(.image){
 	width: 100px;
 }
 .icon, .icon-button {
